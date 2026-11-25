@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ход исследования</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --canvas: #f5f7f6; --surface: #ffffff; --line: #d9e0dc; --ink: #152220;
+  --muted: #4b5955; --accent: #0f6f67; --soft: #d8ecea;
+  --warn: #9b5c00; --warn-soft: #fbeed2; --good: #197a35; --good-soft: #dcf2e3;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #121816; --surface: #1a2320; --line: #2f3c37; --ink: #eef3f0;
+    --muted: #b4c1bb; --accent: #4fc2b6; --soft: #193a36;
+    --warn: #f0b04a; --warn-soft: #3d2d10; --good: #5ccb7a; --good-soft: #173a25;
+  }
+}
+body {
+  margin: 0; background: var(--canvas); color: var(--ink);
+  font: 14px/1.45 "IBM Plex Sans", system-ui, sans-serif; font-variant-numeric: tabular-nums;
+}
+main { max-width: 1120px; margin: auto; padding: 32px 48px; overflow-wrap: anywhere; }
+h1, h2 { font-family: Manrope, system-ui, sans-serif; }
+h1 { margin: 0 0 12px; font-size: 20px; }
+h2 { margin: 0 0 10px; font-size: 16px; }
+.summary { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; color: var(--muted); }
+section { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td, th { padding: 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 99px; color: var(--accent); background: var(--soft); }
+.badge[data-tone="good"] { color: var(--good); background: var(--good-soft); }
+.badge[data-tone="warn"] { color: var(--warn); background: var(--warn-soft); }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#notice { color: var(--muted); }
+.badge { white-space: nowrap; }
+#result { border-inline-start: 4px solid var(--accent); padding: 16px 20px; }
+#finding { margin: 0; max-width: 75ch; font-size: 17px; line-height: 1.5; }
+#claims article { border-top: 1px solid var(--line); margin: 12px 0; padding-top: 12px; }
+#claims h3, #claims p { margin: 4px 0; }
+body[data-final] .metrics { margin-top: 14px; }
+@media(min-width: 761px) and (max-width: 1060px) { section:has(#sources) { grid-column: 1 / -1; } }
+section:has(#sources) td:first-child { min-width: 10em; }
+header { border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+header h1 { font-size: clamp(24px, 3vw, 36px); line-height: 1.15; max-width: 40ch; letter-spacing: -.025em; }
+.stages, .metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.stages { list-style: none; padding: 0; margin: 22px 0; }
+.stages li { border-top: 4px solid var(--line); padding-top: 7px; color: var(--muted); }
+.stages li[aria-current] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.stages li.done { border-color: var(--good); }
+.stages small, .source-location { display: block; font-size: 12px; color: var(--muted); }
+.details section { align-self: stretch; }
+#empty-conflicts { grid-column: 1 / -1; margin: 0; color: var(--muted); }
+.metric { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; color: var(--muted); }
+.metric strong { display: block; text-align: right; font: 700 24px/1.45 Manrope,system-ui,sans-serif; color: var(--ink); }
+.details { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 14px; margin-top: 20px; align-items: start; }
+.details section { margin: 0; overflow-x: auto; }
+th { font-size: 12px; font-weight: 500; }
+@media(max-width: 760px) { main { padding: 20px 14px; } .details { grid-template-columns: minmax(0,1fr); } .metrics { grid-template-columns: repeat(2,1fr); } }
+
+* { box-sizing:border-box; }
+main { max-width:1320px; padding:22px 32px 40px; }
+.mast { display:flex; justify-content:space-between; align-items:center; padding:4px 0 20px; gap:12px; }
+.brand { font:800 22px/1 Manrope,system-ui,sans-serif; letter-spacing:-.055em; }
+.brand::before { content:""; display:inline-block; width:12px; height:18px; border:4px solid var(--accent); border-right-width:7px; border-radius:8px 2px; margin-right:8px; vertical-align:-3px; }
+.jump { font-weight:600; text-decoration:none; background:var(--surface); border:1px solid var(--line); border-radius:99px; padding:7px 14px; }
+header { border:0; padding:0; margin-bottom:20px; }
+header h1 { font-size:32px; max-width:none; }
+.summary span { background:var(--surface); border:1px solid var(--line); border-radius:99px; padding:3px 10px; }
+.hero { --tone:var(--accent); background:var(--soft); border:1px solid var(--line); border-radius:26px; padding:26px 30px; margin-bottom:20px; }
+.hero[data-state="Завершено"] { --tone:var(--good); background:var(--good-soft); }
+.hero[data-state="Частично"] { --tone:var(--warn); background:var(--warn-soft); }
+.hero-top { display:flex; justify-content:space-between; align-items:center; gap:20px; }
+.hero h2 { font-size:clamp(22px,3vw,34px); letter-spacing:-.035em; line-height:1.15; margin:0; }
+.hero-count { flex:none; text-align:right; color:var(--muted); }
+.hero-count strong { display:block; font:700 48px/1 Manrope,system-ui,sans-serif; letter-spacing:-.045em; color:var(--ink); }
+.stages { margin:24px 0 0; gap:6px; }
+.stages li { border:0; padding:0; font-weight:600; }
+.stages li::before { content:""; display:block; height:10px; border-radius:4px; background:var(--line); margin-bottom:8px; }
+.stages li.done::before { background:var(--good); }
+.stages li[aria-current]::before { background:var(--accent); }
+.stages li[aria-current] { color:var(--tone); }
+.metric, .details section, #result { border-radius:22px; padding:20px 22px; }
+.metric strong { font-size:34px; letter-spacing:-.04em; }
+.metrics, .details { gap:16px; }
+#result { margin-bottom:20px; }
+#report:not([hidden]) { display:inline-block; background:var(--soft); color:var(--accent); padding:8px 16px; border-radius:20px; font-weight:650; text-decoration:none; }
+.details section:has(#sources) { grid-column:1/-1; }
+.details section:has(#conflicts) { grid-column:1/-1; }
+@media(max-width:760px) { main {padding:16px;} .hero,.metric,.details section,#result {padding:16px;} .hero-count strong {font-size:32px;} .hero-count {max-width:100px;} }
+</style>
+<main>
+  <div class="mast"><span class="brand">autoresearch</span><a class="jump" href="#assignments-title">Исследователи</a></div>
+  <header><h1 id="topic">Ход исследования</h1>
+  <div class="summary" id="summary"></div>
+  </header>
+  <section class="hero" id="hero"><div class="hero-top"><h2 id="activity">Подготовка исследования</h2><div class="hero-count"><strong id="fraction">—</strong>вопросов обосновано</div></div>
+  <ol class="stages" aria-label="Этапы исследования"><li>Рамки</li><li>Поиск</li><li>Проверка</li><li>Синтез</li></ol></section>
+  <section id="result" hidden><h2>Вывод исследования</h2><p id="finding"></p><div id="claims"></div><p id="gaps" hidden></p><a id="report" download="report.md" hidden>Скачать полный отчёт</a></section>
+  <div class="metrics" id="metrics"></div>
+  <p id="notice" role="status">Загрузка состояния…</p>
+  <div class="details"><section aria-labelledby="questions-title">
+    <h2 id="questions-title">Вопросы</h2>
+    <table><thead><tr><th scope="col">Вопрос</th><th scope="col">Статус</th></tr></thead><tbody id="questions"></tbody></table>
+  </section>
+  <section aria-labelledby="assignments-title">
+    <h2 id="assignments-title">Исследователи</h2>
+    <table><thead><tr><th scope="col">Вопрос</th><th scope="col">Участок</th><th scope="col">Исследователь</th><th scope="col">Статус</th></tr></thead><tbody id="assignments"></tbody></table>
+  </section>
+  <section aria-labelledby="sources-title">
+    <h2 id="sources-title">Источники</h2>
+    <table><thead><tr><th scope="col">Источник</th><th scope="col">Что подтверждает</th></tr></thead><tbody id="sources"></tbody></table>
+  </section>
+  <section aria-labelledby="conflicts-title">
+    <h2 id="conflicts-title">Противоречия</h2>
+    <table><thead><tr><th scope="col">Расхождение</th><th scope="col">Статус</th></tr></thead><tbody id="conflicts"></tbody></table>
+  </section>
+  <p id="empty-conflicts" hidden>Открытых противоречий нет</p>
+  </div>
+</main>
+<script>
+const element = id => document.getElementById(id);
+const node = (tag, text) => Object.assign(document.createElement(tag), {textContent: text});
+const good = ["Завершено", "Обоснован", "Разобрано"];
+const warn = ["Частично", "Пробел", "Открыто"];
+function badge(status) {
+  const label = node("span", status);
+  label.className = "badge";
+  if (good.includes(status)) label.dataset.tone = "good";
+  if (warn.includes(status)) label.dataset.tone = "warn";
+  return label;
+}
+function sourceName(source) {
+  const title = source.id + " · " + source.title;
+  try {
+    const url = new URL(source.url);
+    if (["https:", "http:"].includes(url.protocol)) {
+      return Object.assign(node("a", title), {href: url.href, rel: "noreferrer"});
+    }
+  } catch {}
+  const local = node("span", title);
+  if (source.file) {
+    const location = node("span", [source.file, source.location].filter(Boolean).join(" · "));
+    location.className = "source-location";
+    local.append(location);
+  }
+  return local;
+}
+function fill(id, rows, width, empty) {
+  const body = element(id);
+  body.replaceChildren();
+  if (!rows.length) {
+    const cell = node("td", empty);
+    cell.colSpan = width;
+    body.insertRow().append(cell);
+    return;
+  }
+  for (const values of rows) {
+    const row = body.insertRow();
+    for (const value of values) row.insertCell().append(value);
+  }
+}
+let lastSnapshot = "";
+async function refresh() {
+  try {
+    const response = await fetch("/state.json", {signal: AbortSignal.timeout(5000)});
+    if (!response.ok) throw Error(response.status);
+    const snapshot = await response.text();
+    if (snapshot !== lastSnapshot) {
+      const data = JSON.parse(snapshot);
+      element("topic").textContent = data.topic;
+      element("hero").dataset.state = data.status;
+      const phaseTitles = {Рамки:"Определяем вопросы исследования", Поиск:"Собираем данные", Проверка:"Проверяем выводы", Синтез:"Готовим итоговый отчёт"};
+      element("activity").textContent = data.status === "Завершено" ? "Исследование завершено" :
+        data.status === "Частично" ? "Остались открытые вопросы" : phaseTitles[data.phase] || data.phase;
+      const answered = data.questions.filter(q => q.status === "Обоснован").length;
+      element("fraction").textContent = data.questions.length ? answered + "/" + data.questions.length : "—";
+      const final = ["Завершено", "Частично"].includes(data.status);
+      document.body.toggleAttribute("data-final", final);
+      element("finding").textContent = data.finding || "";
+      element("claims").replaceChildren(...(data.claims || []).map(claim => {
+        const card = document.createElement("article");
+        const status = badge(claim.status);
+        status.dataset.tone = claim.status === "Наблюдение" ? "good" : "warn";
+        card.append(status, node("h3", claim.text), node("p", "Эффект: " + claim.effect),
+          node("p", "Основание: " + claim.evidence), node("p", "Ограничение: " + claim.limitation));
+        return card;
+      }));
+      element("result").hidden = !final;
+      const report = element("report");
+      if (report.hasAttribute("href")) URL.revokeObjectURL(report.href);
+      report.hidden = !data.report_text;
+      if (data.report_text) report.href = URL.createObjectURL(new Blob([data.report_text], {type:"text/plain;charset=utf-8"}));
+      else report.removeAttribute("href");
+      const gaps = data.questions.filter(q => q.status === "Пробел");
+      element("gaps").hidden = data.status !== "Частично" || !gaps.length;
+      element("gaps").replaceChildren(...gaps.map(q => {
+        const item = node("span", "Открытый вопрос: " + q.text);
+        item.className = "source-location";
+        if (q.next_check) item.append(node("span", " " + q.next_check));
+        return item;
+      }));
+      const steps = [...document.querySelectorAll(".stages li")];
+      const current = steps.findIndex(step => step.firstChild.textContent === data.phase);
+      for (const [i, step] of steps.entries()) {
+        const done = data.status === "Завершено" || i < current;
+        step.classList.toggle("done", done);
+        let caption = step.querySelector("small");
+        if (!caption) { caption = document.createElement("small"); step.append(caption); }
+        caption.textContent = done ? "Пройден" : i === current ? (final ? "Остановлен" : "В работе") : "Предстоит";
+        if (!final && i === current) step.setAttribute("aria-current", "step");
+        else step.removeAttribute("aria-current");
+      }
+      const metrics = [
+        ["Начато раундов", data.rounds.used],
+        ["Сдано участков", data.assignments.filter(a => a.status === "Сдан").length + " из " + data.assignments.length],
+        ["Источники", data.sources.length],
+        ["Открытые противоречия", data.conflicts.filter(c => c.status === "Открыто").length]
+      ];
+      element("metrics").replaceChildren(...metrics.map(([label, value]) => {
+        const tile = node("div", label);
+        tile.className = "metric";
+        tile.append(node("strong", value));
+        return tile;
+      }));
+      const budget = data.rounds.limit === null
+        ? "Начато раундов: " + data.rounds.used
+        : "Раундов осталось " + (data.rounds.limit - data.rounds.used) + " из " + data.rounds.limit;
+      element("summary").replaceChildren(badge(data.status), node("span", data.phase),
+        node("span", budget));
+      fill("questions", data.questions.map(q => [q.id + " · " + q.text, badge(q.status)]), 2, "Вопросов пока нет");
+      fill("assignments", data.assignments.map(a => [a.question_id, a.text, a.worker || "Не назначен", badge(a.status)]), 4, "Участков пока нет");
+      fill("sources", data.sources.map(s => [sourceName(s), s.evidence]), 2, "Источников пока нет");
+      fill("conflicts", data.conflicts.map(c => [c.id + " · " + c.text, badge(c.status)]), 2, "Противоречия пока не записаны");
+      element("conflicts").closest("section").hidden = !data.conflicts.length;
+      element("empty-conflicts").hidden = Boolean(data.conflicts.length);
+      lastSnapshot = snapshot;
+    }
+    element("notice").hidden = true;
+  } catch {
+    element("notice").textContent = "Связь с дашбордом прервана. Повторяем загрузку.";
+    element("notice").hidden = false;
+  } finally {
+    setTimeout(refresh, 2000);
+  }
+}
+refresh();
+</script>
+</html>
