@@ -104,6 +104,20 @@ class PublicationTests(unittest.TestCase):
         self.state["status"] = "Частично"
         self.publish(True)
 
+    def test_subagents_count(self):
+        self.state["claims"] = [self.claim]
+        self.state["assignments"] = [
+            dict(id="R1-A1", question_id="Q1", text="Участок 1", worker="agent-1", status="Сдан"),
+            dict(id="R1-A2", question_id="Q1", text="Участок 2", worker="agent-2", status="Сдан"),
+        ]
+        self.publish(True)
+        self.assertEqual(json.loads(self.published.read_text(encoding="utf-8"))["subagents_count"], 2)
+        self.state["subagents_count"] = 1
+        self.publish(False)
+        self.state["subagents_count"] = 4
+        self.publish(True)
+        self.assertEqual(json.loads(self.published.read_text(encoding="utf-8"))["subagents_count"], 4)
+
 
 if __name__ == "__main__":
     unittest.main()

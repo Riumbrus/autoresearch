@@ -67,6 +67,21 @@ def publish(run):
     if any(item["question_id"] not in question_ids for item in state["assignments"]):
         raise ValueError("Every assignment must reference a question")
 
+    active_subagents = {
+        item["worker"].strip() for item in state["assignments"] if item["worker"].strip()
+    }
+    reviews_raw = state.get("reviews")
+    if isinstance(reviews_raw, dict):
+        for review in reviews_raw.values():
+            if isinstance(review, dict) and isinstance(review.get("agent"), str) and review["agent"].strip():
+                active_subagents.add(review["agent"].strip())
+    if "subagents_count" in state and state["subagents_count"] is not None:
+        count = state["subagents_count"]
+        if type(count) is not int or count < len(active_subagents):
+            raise ValueError("Число запущенных субагентов должно быть целым и не меньше числа назначенных исполнителей")
+    else:
+        state["subagents_count"] = len(active_subagents)
+
     status = state["status"]
     if status not in {"В работе", "Завершено", "Частично"}:
         raise ValueError("Неизвестный статус прогона")

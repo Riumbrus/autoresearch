@@ -230,8 +230,13 @@ async function refresh() {
       const budget = data.rounds.limit === null
         ? "Начато раундов: " + data.rounds.used
         : "Раундов осталось " + (data.rounds.limit - data.rounds.used) + " из " + data.rounds.limit;
-      element("summary").replaceChildren(badge(data.status), node("span", data.phase),
-        node("span", budget));
+      const summaryItems = [badge(data.status), node("span", data.phase)];
+      if (data.mode === "deep") summaryItems.push(node("span", "Режим: глубокий"));
+      summaryItems.push(node("span", budget));
+      if (typeof data.subagents_count === "number") {
+        summaryItems.push(node("span", "Субагентов: " + data.subagents_count));
+      }
+      element("summary").replaceChildren(...summaryItems);
       fill("questions", data.questions.map(q => [q.id + " · " + q.text, badge(q.status)]), 2, "Вопросов пока нет");
       fill("assignments", data.assignments.map(a => [a.question_id, a.text, a.worker || "Не назначен", badge(a.status)]), 4, "Участков пока нет");
       fill("sources", data.sources.map(s => [sourceName(s), s.evidence]), 2, "Источников пока нет");
